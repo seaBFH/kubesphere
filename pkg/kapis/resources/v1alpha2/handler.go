@@ -224,6 +224,7 @@ func (r *resourceHandler) handleGetRouter(request *restful.Request, response *re
 
 // Create ingress controller and related services
 func (r *resourceHandler) handleCreateRouter(request *restful.Request, response *restful.Response) {
+	// TODO: create velero schedules & bsl & baackup & restore
 	namespace := request.PathParameter("namespace")
 	newRouter := api.Router{}
 	err := request.ReadEntity(&newRouter)

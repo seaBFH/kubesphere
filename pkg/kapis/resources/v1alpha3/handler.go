@@ -207,6 +207,7 @@ func (h *Handler) handleGetComponents(request *restful.Request, response *restfu
 // as input, and authenticate registry with credential specified. Returns http.StatusOK if authenticate successfully,
 // returns http.StatusUnauthorized if failed.
 func (h *Handler) handleVerifyImageRepositorySecret(request *restful.Request, response *restful.Response) {
+	// NOTE: handle post request,just note, remove this line
 	secret := &v1.Secret{}
 	err := request.ReadEntity(secret)
 	if err != nil {

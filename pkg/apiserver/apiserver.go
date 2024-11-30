@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	unionauth "k8s.io/apiserver/pkg/authentication/request/union"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	runtimecache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -264,6 +265,7 @@ func (s *APIServer) installKubeSphereAPIs(stopCh <-chan struct{}) {
 	urlruntime.Must(version.AddToContainer(s.container, s.KubernetesClient.Kubernetes().Discovery()))
 	urlruntime.Must(kubeedgev1alpha1.AddToContainer(s.container, s.Config.KubeEdgeOptions.Endpoint))
 	urlruntime.Must(edgeruntimev1alpha1.AddToContainer(s.container, s.Config.EdgeRuntimeOptions.Endpoint))
+	// TODO: add velero reousrces for create & delete
 	if s.Config.NotificationOptions.IsEnabled() {
 		urlruntime.Must(notificationv1.AddToContainer(s.container, s.Config.NotificationOptions.Endpoint))
 		urlruntime.Must(notificationkapisv2beta1.AddToContainer(s.container, s.InformerFactory, s.KubernetesClient.Kubernetes(),
@@ -422,6 +424,10 @@ func waitForCacheSync(discoveryClient discovery.DiscoveryInterface, sharedInform
 	sharedInformerFactory.Start(stopCh)
 	sharedInformerFactory.WaitForCacheSync(stopCh)
 	return nil
+}
+
+func NewDynamicInformerGenericWrapper(dynamicInformerFactory dynamicinformer.DynamicSharedInformerFactory) informers.GenericInformerFactory {
+	return &DynamicInformerGenericWrapper{dynamicInformerFactory: dynamicInformerFactory}
 }
 
 func (s *APIServer) waitForResourceSync(ctx context.Context) error {
@@ -609,6 +615,30 @@ func (s *APIServer) waitForResourceSync(ctx context.Context) error {
 				return promFactory.ForResource(resource)
 			},
 			prometheusGVRs, stopCh); err != nil {
+			return err
+		}
+	}
+
+	// TODO: start caching for velero resources, if other resources depend on dynamic factory, add them here
+	if veleroFactory := s.InformerFactory.DynamicSharedInformerFactory(); veleroFactory != nil {
+		veleroGVRs := map[schema.GroupVersion][]string{
+			{Group: "velero.io", Version: "v1"}: {
+				"backups",
+				"backupstoragelocations",
+				"schedules",
+				"restores",
+				// TODO: add more resources if needed
+			},
+		}
+
+		// adapt dynamic factory to generic factory
+		if err := waitForCacheSync(s.KubernetesClient.Kubernetes().Discovery(),
+			NewDynamicInformerGenericWrapper(veleroFactory),
+			func(resource schema.GroupVersionResource) (interface{}, error) {
+				return veleroFactory.ForResource(resource), nil
+			},
+			veleroGVRs,
+			stopCh); err != nil {
 			return err
 		}
 	}

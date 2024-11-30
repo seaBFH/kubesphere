@@ -24,6 +24,7 @@ import (
 	promfake "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
 	istioinformers "istio.io/client-go/pkg/informers/externalversions"
 	apiextensionsinformers "k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 
@@ -52,6 +53,10 @@ func NewNullInformerFactory() InformerFactory {
 		fakeKsInformerFactory:  fakeKsInformerFactory,
 		fakePrometheusFactory:  fakePrometheusFactory,
 	}
+}
+
+func (n nullInformerFactory) DynamicSharedInformerFactory() dynamicinformer.DynamicSharedInformerFactory {
+	return nil
 }
 
 func (n nullInformerFactory) KubernetesSharedInformerFactory() informers.SharedInformerFactory {

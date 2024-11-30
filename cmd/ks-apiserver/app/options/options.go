@@ -53,6 +53,9 @@ import (
 	"kubesphere.io/kubesphere/pkg/simple/client/monitoring/metricsserver"
 	"kubesphere.io/kubesphere/pkg/simple/client/monitoring/prometheus"
 	"kubesphere.io/kubesphere/pkg/simple/client/sonarqube"
+
+	velerov1api "kubesphere.io/kubesphere/pkg/api/velero/apis/velero/v1"
+	velerov2alpha1api "kubesphere.io/kubesphere/pkg/api/velero/apis/velero/v2alpha1"
 )
 
 type ServerRunOptions struct {
@@ -117,7 +120,7 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*apiserver.APIS
 	apiServer.KubernetesClient = kubernetesClient
 
 	informerFactory := informers.NewInformerFactories(kubernetesClient.Kubernetes(), kubernetesClient.KubeSphere(),
-		kubernetesClient.Istio(), kubernetesClient.Snapshot(), kubernetesClient.ApiExtensions(), kubernetesClient.Prometheus())
+		kubernetesClient.Istio(), kubernetesClient.Snapshot(), kubernetesClient.ApiExtensions(), kubernetesClient.Prometheus(), kubernetesClient.DynamicClient())
 	apiServer.InformerFactory = informerFactory
 
 	if s.MonitoringOptions == nil || len(s.MonitoringOptions.Endpoint) == 0 {
@@ -194,10 +197,18 @@ func (s *ServerRunOptions) NewAPIServer(stopCh <-chan struct{}) (*apiserver.APIS
 		server.Addr = fmt.Sprintf(":%d", s.GenericServerRunOptions.SecurePort)
 	}
 
+	// registry schemes
 	sch := scheme.Scheme
 	s.schemeOnce.Do(func() {
 		if err := apis.AddToScheme(sch); err != nil {
 			klog.Fatalf("unable add APIs to scheme: %v", err)
+		}
+		// add velero to scheme
+		if err := velerov1api.AddToScheme(sch); err != nil {
+			klog.Fatalf("unable add velerov1 APIs to scheme: %v", err)
+		}
+		if err := velerov2alpha1api.AddToScheme(sch); err != nil {
+			klog.Fatalf("unable add velerov2alpha APIs to scheme: %v", err)
 		}
 	})
 

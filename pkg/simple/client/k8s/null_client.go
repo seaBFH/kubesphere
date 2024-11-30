@@ -22,6 +22,7 @@ import (
 	istio "istio.io/client-go/pkg/clientset/versioned"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -33,6 +34,10 @@ type nullClient struct {
 
 func NewNullClient() Client {
 	return &nullClient{}
+}
+
+func (n nullClient) DynamicClient() dynamic.Interface {
+	return nil
 }
 
 func (n nullClient) Kubernetes() kubernetes.Interface {

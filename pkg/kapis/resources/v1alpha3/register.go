@@ -48,6 +48,8 @@ const (
 
 var GroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha3"}
 
+var VeleroGroupVersion = schema.GroupVersion{Group: "velero.io", Version: "v1"}
+
 func Resource(resource string) schema.GroupResource {
 	return GroupVersion.WithResource(resource).GroupResource()
 }

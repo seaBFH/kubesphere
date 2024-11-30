@@ -62,6 +62,7 @@ func (d *DynamicResourceHandler) HandleServiceError(serviceError restful.Service
 		return
 	}
 
+	// NOTE: check if the resource is served
 	served, err := d.IsServed(gvr)
 	if err != nil {
 		responsewriters.InternalError(w, req.Request, err)

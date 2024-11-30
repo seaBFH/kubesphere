@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"kubesphere.io/kubesphere/pkg/apiserver/query"
@@ -214,6 +215,7 @@ func (h *resourceManager) List(ctx context.Context, namespace string, query *que
 	}
 
 	filtered, remainingItemCount := DefaultList(extractList, query, compare, filter)
+	klog.V(0).Infof("list backup totalItems", remainingItemCount) // TODO: remove
 	list.SetRemainingItemCount(remainingItemCount)
 	if err := meta.SetList(list, filtered); err != nil {
 		return err

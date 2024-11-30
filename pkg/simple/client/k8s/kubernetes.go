@@ -23,6 +23,7 @@ import (
 	promresourcesclient "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	istioclient "istio.io/client-go/pkg/clientset/versioned"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -37,6 +38,7 @@ type Client interface {
 	Snapshot() snapshotclient.Interface
 	ApiExtensions() apiextensionsclient.Interface
 	Prometheus() promresourcesclient.Interface
+	DynamicClient() dynamic.Interface
 	Master() string
 	Config() *rest.Config
 }
@@ -55,6 +57,8 @@ type kubernetesClient struct {
 	apiextensions apiextensionsclient.Interface
 
 	prometheus promresourcesclient.Interface
+
+	dynamicclient dynamic.Interface
 
 	master string
 
@@ -136,10 +140,20 @@ func NewKubernetesClient(options *KubernetesOptions) (Client, error) {
 		return nil, err
 	}
 
+	// dynmaic client
+	k.dynamicclient, err = dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	k.master = options.Master
 	k.config = config
 
 	return &k, nil
+}
+
+func (k *kubernetesClient) DynamicClient() dynamic.Interface {
+	return k.dynamicclient
 }
 
 func (k *kubernetesClient) Kubernetes() kubernetes.Interface {

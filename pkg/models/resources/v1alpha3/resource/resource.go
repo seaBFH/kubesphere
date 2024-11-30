@@ -19,6 +19,8 @@ package resource
 import (
 	"errors"
 
+	velerov1 "kubesphere.io/kubesphere/pkg/api/velero/apis/velero/v1"
+	"kubesphere.io/kubesphere/pkg/models/resources/v1alpha3/velerobackup"
 	"kubesphere.io/kubesphere/pkg/models/resources/v1alpha3/volumesnapshotcontent"
 
 	"kubesphere.io/kubesphere/pkg/models/resources/v1alpha3/volumesnapshotclass"
@@ -126,6 +128,10 @@ func NewResourceGetter(factory informers.InformerFactory, cache cache.Cache) *Re
 	clusterResourceGetters[schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}] = node.New(factory.KubernetesSharedInformerFactory())
 	clusterResourceGetters[schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}] = namespace.New(factory.KubernetesSharedInformerFactory())
 	clusterResourceGetters[schema.GroupVersionResource{Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions"}] = customresourcedefinition.New(factory.ApiExtensionSharedInformerFactory())
+
+	// velero resources
+	// TODO: backup & restore & schedule & backupstoragelocation & volumebackup & volumebackuplocation, do not use informer for now
+	namespacedResourceGetters[velerov1.SchemeGroupVersion.WithResource("backups")] = velerobackup.New(factory.DynamicSharedInformerFactory())
 
 	// kubesphere resources
 	namespacedResourceGetters[networkv1alpha1.SchemeGroupVersion.WithResource(networkv1alpha1.ResourcePluralIPPool)] = ippool.New(factory.KubeSphereSharedInformerFactory(), factory.KubernetesSharedInformerFactory())

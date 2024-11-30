@@ -28,6 +28,8 @@ import (
 	istioinformers "istio.io/client-go/pkg/informers/externalversions"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apiextensionsinformers "k8s.io/apiextensions-apiserver/pkg/client/informers/externalversions"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	k8sinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 
@@ -47,6 +49,7 @@ type InformerFactory interface {
 	SnapshotSharedInformerFactory() snapshotinformer.SharedInformerFactory
 	ApiExtensionSharedInformerFactory() apiextensionsinformers.SharedInformerFactory
 	PrometheusSharedInformerFactory() prominformers.SharedInformerFactory
+	DynamicSharedInformerFactory() dynamicinformer.DynamicSharedInformerFactory
 
 	// Start shared informer factory one by one if they are not nil
 	Start(stopCh <-chan struct{})
@@ -64,11 +67,13 @@ type informerFactories struct {
 	snapshotInformerFactory      snapshotinformer.SharedInformerFactory
 	apiextensionsInformerFactory apiextensionsinformers.SharedInformerFactory
 	prometheusInformerFactory    prominformers.SharedInformerFactory
+	// NOTE:add velero informer factory, velero did not generate informer factory
+	dynamicInformerFactory dynamicinformer.DynamicSharedInformerFactory
 }
 
 func NewInformerFactories(client kubernetes.Interface, ksClient versioned.Interface, istioClient istioclient.Interface,
 	snapshotClient snapshotclient.Interface, apiextensionsClient apiextensionsclient.Interface,
-	prometheusClient promresourcesclient.Interface) InformerFactory {
+	prometheusClient promresourcesclient.Interface, dynamicClient dynamic.Interface) InformerFactory {
 	factory := &informerFactories{}
 
 	if client != nil {
@@ -95,7 +100,16 @@ func NewInformerFactories(client kubernetes.Interface, ksClient versioned.Interf
 		factory.prometheusInformerFactory = prominformers.NewSharedInformerFactory(prometheusClient, defaultResync)
 	}
 
+	// add velero informer factory here(dynamic imformer)
+	if dynamicClient != nil {
+		factory.dynamicInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(dynamicClient, defaultResync)
+	}
+
 	return factory
+}
+
+func (f *informerFactories) DynamicSharedInformerFactory() dynamicinformer.DynamicSharedInformerFactory {
+	return f.dynamicInformerFactory
 }
 
 func (f *informerFactories) KubernetesSharedInformerFactory() k8sinformers.SharedInformerFactory {

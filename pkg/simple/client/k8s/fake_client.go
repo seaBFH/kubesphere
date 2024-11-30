@@ -22,6 +22,7 @@ import (
 	istioclient "istio.io/client-go/pkg/clientset/versioned"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -67,6 +68,10 @@ func NewFakeClientSets(k8sClient kubernetes.Interface, discoveryClient *discover
 		MasterURL:          masterURL,
 		KubeConfig:         kubeConfig,
 	}
+}
+
+func (n *FakeClient) DynamicClient() dynamic.Interface {
+	return nil
 }
 
 func (n *FakeClient) Kubernetes() kubernetes.Interface {
